@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="hw2.css">
+    <title>HM</title>
+</head>
+
+<body>
+    
+    <h2 class="font">Что я помню :</h2>
+
+    <div class="pomnu">   
+        <li>Как вообще делать подобные страницы</li>
+        <li>Про существование Js и CSS</li>
+        <li>Как вставлять картинки и делать кнопки</li>
+    </div>
+
+    <h2 class="font">Что я хочу :</h2>
+
+    <div class="hochu">        
+        <li>Научиться делать полноценный сайт с несколькими страницами, с возможностью у каждого выбрать собственную тему</li>
+        <li>Может, подключать платежную систему</li>
+        <li>Не сильно углубляться во что-то не сильно связанное с веб-технологиями</li>
+    </div>
+
+    <div class="photo">
+        <button id="bu1">Пуджик</button>
+    </div>
+    <script>
+        const bu1 = document.getElementById("bu1")
+        
+        bu1.addEventListener('click', function (event){
+            const img = document.createElement('img');
+            img.src = 'pudge.jpg';
+            document.body.appendChild(img);
+        })
+    </script>
+</body>
+</html>
