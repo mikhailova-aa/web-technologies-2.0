@@ -11,7 +11,7 @@ def increment_request_counter(service_name):
     current_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
     # Формируем ключ для хранения счетчика в Redis
-    key = f'requests:{current_date}:{service_name}'
+    key = f'requests:{service_name}'
 
     # Увеличиваем счетчик на 1
     redis_conn.incr(key)
