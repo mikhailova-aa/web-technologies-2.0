@@ -9,7 +9,10 @@ service_name = "counter"
 # Формируем ключ
 key = f'requests:{service_name}'
 # Время жизни
-redis_conn.expire(key, 24 * 3600)
+if not redis_conn.exists(key):
+    # Если ключ не существует, устанавливаем его значение и время жизни
+    redis_conn.set(key, 0)
+    redis_conn.expire(key, 24 * 3600)
 
 # Получаем значение счетчика
 counter_value = redis_conn.get(key)
