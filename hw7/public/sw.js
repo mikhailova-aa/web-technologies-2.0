@@ -1,6 +1,9 @@
 self.addEventListener('push', event => {
+  console.log('Получено новое уведомление', event);
+
   const options = {
-    body: event.data.text(),
+    body: event.data.text(Приветики),
+
   };
 
   event.waitUntil(
@@ -11,5 +14,7 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 });
+
+
 
 

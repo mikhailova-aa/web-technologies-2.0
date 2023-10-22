@@ -21,36 +21,35 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post('/subscribe', function (req, res) {
-  const subscription = {
-    endpoint: req.body.endpoint,
-    keys: {
-      p256dh: req.body.keys.p256dh,
-      auth: req.body.keys.auth
-    }
-  };
+const subscriptions = [];
+
+app.post('/subscribe', (req, res) => {
+  const subscription = req.body;
+
+  subscriptions.push(subscription);
   
   const payload = JSON.stringify({
-    title: 'Welcome',
-    body: 'Thank you for enabling push notifications',
+    title: 'У тебя новое сообщение, скорее прочти его',
+    body: 'Вдруг там что то важное',
   });
   const options = {
     TTL: 3600 
   };
-  webpush.sendNotification(
-    subscription, 
-    payload,
-    options
-  ).then(function() {
+
+
+  Promise.all(subscriptions.map(sub=> {
+    return   webpush.sendNotification(subscription, payload,options);
+  }))
+
+    .then(() => {
     console.log('Send welcome push notification');
     res.status(200).send('Thanks for subscribe my page');
-    return;
   }).catch(err => {
     console.error('Unable to send welcome push notification', err );
     res.status(500).send('subscription not possible');
-    return;
   });
 });
+
 
 app.listen(5500, () => {
   console.log('Сервер запущен на порту 5500');
