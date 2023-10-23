@@ -7,20 +7,29 @@
   <body>
     <button id="subscribeButton">Подписаться на уведомления</button>
     
-
     <script>
-      const publicKey = 'BAv-qPvotxVD3urcHOE7CKVY1PElPr75pZBY-vNz_c7B8LBepNpYONkCx4Xo1V19b8RcAofi976gROqngnot65c';
       const subscribeButton = document.getElementById('subscribeButton');
+
+      subscribeButton.addEventListener('click', () => {
+        subscribeButton.disabled = true;
+        subscribe();
+      });
 
       async function subscribe() {
         try {
           const registration = await navigator.serviceWorker.register('/public/sw.js');
+
+
+          const response = await fetch('http://127.0.0.1:3000/getPublicKey');
+          const data = await response.json();
+          const publicKey = data.publicKey; 
+
           const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey),
           });
 
-          const response = await fetch('http://localhost:3000/subscribe', {
+          const subscribeResponse = await fetch('http://localhost:3000/subscribe', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -28,20 +37,15 @@
             body: JSON.stringify(subscription),
           });
 
-          if (response.status === 200) {
+          if (subscribeResponse.status === 200) {
             console.log('Успешно подписан на уведомления');
           } else {
-            console.error('Ошибка при подписке на уведомления:', response.statusText);
+            console.error('Ошибка при подписке на уведомления:', subscribeResponse.statusText);
           }
         } catch (error) {
           console.error('Ошибка при подписке на уведомления:', error);
         }
       }
-
-      subscribeButton.addEventListener('click', () => {
-        subscribeButton.disabled = true;
-        subscribe();
-      });
 
       function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -67,10 +71,6 @@
       }
       
       console.log(Notification.permission);
-
-
-      
-
     </script>
   </body>
 </html>
