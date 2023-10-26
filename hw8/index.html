@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Example</title>
+  </head>
+  <body>
+    <h1>WebSocket Example</h1>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io("http://localhost:3000");
+
+      // Отправка сообщения от клиента к серверу (C->S)
+      socket.emit('clientToServer', 'Привет, сервер!');
+
+      // Обработчик события от сервера к клиенту (S->C)
+      socket.on('serverToClient', (data) => {
+        console.log('Сообщение от сервера: ', data);
+      });
+    </script>
+  </body>
+</html>
