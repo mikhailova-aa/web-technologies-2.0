@@ -5,17 +5,25 @@
   </head>
   <body>
     <h1>WebSocket Example</h1>
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    
     <script>
-      const socket = io("http://localhost:3000");
+     const socket = new WebSocket('ws://localhost:3000');
 
-      // Отправка сообщения от клиента к серверу (C->S)
-      socket.emit('clientToServer', 'Привет, сервер!');
+socket.onopen = () => {
+  console.log('Подключено к серверу WebSocket');
 
-      // Обработчик события от сервера к клиенту (S->C)
-      socket.on('serverToClient', (data) => {
-        console.log('Сообщение от сервера: ', data);
-      });
+  // Отправка сообщения на сервер
+  socket.send('Привет, сервер!');
+};
+// Обработка сообщений от сервера
+socket.onmessage = (event) => {
+  console.log('Получено сообщение от сервера:', event.data);
+};
+
+socket.onclose = () => {
+  console.log('Отключено от сервера WebSocket');
+};
+
     </script>
   </body>
 </html>

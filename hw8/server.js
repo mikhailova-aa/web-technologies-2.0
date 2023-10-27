@@ -1,36 +1,31 @@
 const http = require('http');
-const express = require('express');
-const socketIo = require('socket.io');
+const WebSocket = require('ws');
 
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: 'http://127.0.0.1:5500', 
-    methods: ['GET', 'POST']
-  }
+const server = http.createServer((req, res) => {
+  // Обработка HTTP-запросов
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WebSocket Server');
 });
 
-// Обработчик события при подключении клиента
-io.on('connection', (socket) => {
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', (ws) => {
   console.log('Клиент подключился');
 
-  // Обработка события от клиента к серверу (C->S)
-  socket.on('clientToServer', (data) => {
-    console.log('Сообщение от клиента: ', data);
+  // Обработка сообщений от клиента
+  ws.on('message', (message) => {
+    console.log(`Получено сообщение: ${message}`);
 
-    // Отправка сообщения от сервера к клиенту (S->C)
-    socket.emit('serverToClient', 'Привет клиент');
+    // Отправка сообщения  клиенту
+    ws.send('На твой телефон пришло новое сообщение, посмотри вдруг там что-то важное ' );
   });
 
-
   // Обработчик события при отключении клиента
-  socket.on('disconnect', () => {
+  ws.on('close', () => {
     console.log('Клиент отключился');
   });
 });
 
-// Запуск сервера на порту 3000
 server.listen(3000, () => {
-  console.log('Сервер запущен на порту 3000');
+  console.log('Сервер WebSocket запущен на порту 3000');
 });
