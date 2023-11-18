@@ -14,7 +14,7 @@ myVideo.muted = true; // Отключение звука для собствен
 const peers = {};
 
 // Инициализация WebSocket для обмена сообщениями с сервером
-const ws = new WebSocket('ws://localhost:3000'); // Замените на ваш URL WebSocket сервера
+const ws = new WebSocket('ws://localhost:3000'); 
 
 // Обработчик открытия WebSocket-соединения
 ws.addEventListener('open', () => {
