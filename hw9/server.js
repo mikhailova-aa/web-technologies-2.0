@@ -1,8 +1,7 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const { v4: uuidV4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,49 +11,73 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
-  res.redirect(`/${uuidV4()}`);
+  res.redirect(`/${uuidv4()}`);
 });
 
 app.get('/:room', (req, res) => {
   res.render('room', { roomId: req.params.room });
 });
 
-// Словарь для отслеживания соединений клиентов в комнатах
-const rooms = {};
+const rooms = new Map();
 
-// WebSocket handling
+const MESSAGE_TYPES = {
+  JOIN_ROOM: 'join-room',
+  USER_CONNECTED: 'user-connected',
+  OFFER: 'offer',
+  ANSWER: 'answer',
+  ICE_CANDIDATE: 'ice-candidate',
+  JOINED_ROOM: 'joined-room',
+};
+
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
-    // Обработка сообщений от клиентов
     const data = JSON.parse(message);
-    const { type, roomId, userId } = data;
+    const { type, roomId, userId, targetUserId, offer, answer, candidate } = data;
 
-    if (type === 'join-room') {
-      // Присоединение клиента к комнате
+    if (type === MESSAGE_TYPES.JOIN_ROOM) {
       ws.roomId = roomId;
-      if (!rooms[roomId]) {
-        rooms[roomId] = [];
+      if (!rooms.has(roomId)) {
+        rooms.set(roomId, []);
       }
-      rooms[roomId].push(ws);
+      rooms.get(roomId).push(ws);
 
-      // Оповещение других клиентов о подключении нового пользователя
-      rooms[roomId].forEach((client) => {
+      // Если у клиента нет userId, присвоить новый уникальный userId
+      ws.userId = userId || uuidv4();
+
+      rooms.get(roomId).forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'user-connected', userId }));
+          client.send(JSON.stringify({ type: MESSAGE_TYPES.USER_CONNECTED, userId: ws.userId }));
         }
       });
 
-      // Обработка закрытия соединения клиента
-      ws.on('close', () => {
-        rooms[roomId] = rooms[roomId].filter((client) => client !== ws);
+      ws.send(JSON.stringify({ type: MESSAGE_TYPES.joined_room, roomId, userId: ws.userId }));
 
-        rooms[roomId].forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'user-disconnected', userId }));
+      ws.on('close', () => {
+        if (rooms.has(roomId)) {
+          rooms.get(roomId).forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type, userId: ws.userId, roomId, [type]: type === MESSAGE_TYPES.OFFER ? offer : answer }));
+            }
+          });
+        }
+      });
+    } else if (type === MESSAGE_TYPES.OFFER || type === MESSAGE_TYPES.ANSWER) {
+      if (rooms.has(roomId)) {
+        rooms.get(roomId).forEach((client) => {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type, userId: ws.userId, [type]: type === MESSAGE_TYPES.OFFER ? offer : answer }));
           }
         });
-      });
-    }
+      }
+    } else if (type === MESSAGE_TYPES.ICE_CANDIDATE) {
+      if (rooms.has(roomId)) {
+        rooms.get(roomId).forEach((client) => {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: MESSAGE_TYPES.ICE_CANDIDATE, userId: ws.userId, candidate }));
+          }
+        });
+      }
+    } 
   });
 });
 
