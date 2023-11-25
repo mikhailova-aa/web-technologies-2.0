@@ -8,5 +8,10 @@ services:
       - redis
     ports:
       - "5000:5000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost/heartbeat"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
   redis:
     image: "redis:alpine"
