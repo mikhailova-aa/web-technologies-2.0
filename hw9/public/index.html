@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Chat</title>
+</head>
+<body>
+  <video id="localVideo" autoplay muted playsinline></video>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <button onclick="startConnection()">Start Connection</button>
+
+  <script>
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    let localStream;
+    let remoteStream;
+    let peerConnection;
+    let ws; 
+    let userId; // Добавим переменную для хранения userId
+  
+    function startConnection() {
+      ws = new WebSocket('ws://localhost:3000'); // Инициализируем ws
+
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          localVideo.srcObject = stream;
+          localStream = stream;
+
+          // Создаем RTCPeerConnection
+          peerConnection = new RTCPeerConnection();
+
+          // Добавляем треки локального видеопотока в RTCPeerConnection
+          localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+          });
+
+          // Обработка событий RTCPeerConnection
+          peerConnection.onicecandidate = handleIceCandidate;
+          peerConnection.ontrack = handleTrack;
+
+          // Создаем предложение и устанавливаем его как локальное описание
+          peerConnection.createOffer()
+            .then((offer) => {
+              console.log('Offer created:', offer);
+              return peerConnection.setLocalDescription(offer);
+            })
+            .then(() => {
+              // Отправляем предложение на сервер вместе с userId
+              ws.send(JSON.stringify({ type: 'offer', offer: peerConnection.localDescription, userId: userId }));
+            })
+            .catch((error) => {
+              console.error('Error creating offer:', error);
+            });
+        })
+        .catch((error) => {
+          console.error('Error accessing media devices:', error);
+        });
+
+      // Добавим обработчик события открытия соединения для отправки userId на сервер
+      ws.addEventListener('open', () => {
+        userId = prompt('Enter your userId:'); // Можно использовать другие способы для генерации userId
+        ws.send(JSON.stringify({ type: 'userId', userId: userId }));
+      });
+    
+
+
+    function handleIceCandidate(event) {
+      // Отправляем кандидата на сервер
+      if (event.candidate) {
+        console.log('Sending ice candidate:', event.candidate);
+        ws.send(JSON.stringify({ type: 'iceCandidate', iceCandidate: event.candidate }));
+      }
+    }
+
+    function handleTrack(event) {
+      // Получаем удаленный поток и отображаем его
+      console.log('Received remote track:', event.streams[0]);
+      remoteVideo.srcObject = event.streams[0];
+      remoteStream = event.streams[0];
+    }
+
+
+    function handleOffer(offer) {
+  console.log('Received offer:', offer);
+
+  // Устанавливаем удаленное описание
+  peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+    .then(() => {
+      // Создаем ответ
+      return peerConnection.createAnswer();
+    })
+    .then((answer) => {
+      // Устанавливаем локальное описание
+      return peerConnection.setLocalDescription(answer);
+    })
+    .then(() => {
+      // Отправляем ответ на сервер
+      console.log('Sending answer:', peerConnection.localDescription);
+      ws.send(JSON.stringify({ type: 'answer', answer: peerConnection.localDescription }));
+    })
+    .catch((error) => {
+      console.error('Error creating or sending answer:', error);
+    });
+}
+
+function handleAnswer(answer) {
+  console.log('Received answer:', answer);
+
+  // Устанавливаем удаленное описание
+  peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
+    .catch((error) => {
+      console.error('Error setting remote description:', error);
+    });
+}
+    
+// Обработка сообщения от сервера
+ws.addEventListener('message', (event) => {
+  const message = JSON.parse(event.data);
+
+  if (message.type === 'offer') {
+    handleOffer(message.offer);
+  } else if (message.type === 'answer') {
+    handleAnswer(message.answer);
+  } else if (message.type === 'iceCandidate') {
+    // Добавляем кандидата в RTCPeerConnection
+    peerConnection.addIceCandidate(new RTCIceCandidate(message.iceCandidate))
+      .catch((error) => {
+        console.error('Error adding ice candidate:', error);
+      });
+  } else if (message.type === 'startVideoChat') {
+    // Здесь вы можете добавить логику для начала видеочата, если необходимо
+    console.log(`Received startVideoChat request from ${message.partnerUserId}`);
+  }
+});
+    }
+  </script>
+</body>
+</html>
