@@ -1,11 +1,12 @@
+# test_unit.py
 import unittest
-import message_pb2
+from producer import create_message
 
-class TestMessage(unittest.TestCase):
-    def test_message_creation(self):
-        msg = message_pb2.MyMessage()
-        msg.text = "Test text"
-        self.assertEqual(msg.text, "Test text")
+class TestUnit(unittest.TestCase):
+    def test_create_message(self):
+        text = "Test text"
+        message = create_message(text)
+        self.assertEqual(message.text, text)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,26 +1,38 @@
+# producer.py
+
 import pika
-import message_pb2  # Импортируем скомпилированный protobuf-модуль
+import message_pb2
 
-# Установите соединение с RabbitMQ
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
+def create_message(text):
+    message = message_pb2.MyMessage()
+    message.text = text
+    return message
 
-# Объявляем очередь
-channel.queue_declare(queue='my_queue')
+def produce_message(text):
+    # Установите соединение с RabbitMQ
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
 
-# Создаем и отправляем сообщение
-message = message_pb2.MyMessage()
-message.text = "Ya domashka №5"
+    # Объявляем очередь
+    channel.queue_declare(queue='my_queue')
 
-# Сериализуем protobuf-сообщение в байты
-message_bytes = message.SerializeToString()
+    # Создаем сообщение
+    message = create_message(text)
 
-# Отправляем сообщение в очередь
-channel.basic_publish(exchange='',
-                      routing_key='my_queue',
-                      body=message_bytes)
+    # Сериализуем protobuf-сообщение в байты
+    message_bytes = message.SerializeToString()
 
-print(f"Отправлено: {message.text}")
+    # Отправляем сообщение в очередь
+    channel.basic_publish(exchange='',
+                          routing_key='my_queue',
+                          body=message_bytes)
 
-# Закрываем соединение
-connection.close()
+    print(f"Отправлено: {message.text}")
+
+    # Закрываем соединение
+    connection.close()
+
+# Если этот файл используется как исполняемый, то пример использования функции
+if __name__ == '__main__':
+    text = input("Введите текст сообщения: ")
+    produce_message(text)
