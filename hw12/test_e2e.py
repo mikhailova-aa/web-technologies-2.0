@@ -1,32 +1,31 @@
 import unittest
-from unittest.mock import patch, Mock
-import producer
-import threading
+from subprocess import Popen, PIPE
 import time
 
 class TestE2E(unittest.TestCase):
-    @patch('pika.BlockingConnection', Mock)
-    @patch('pika.ConnectionParameters', Mock)
     def test_e2e(self):
-        # Запускаем consumer в отдельном потоке
-        consumer_thread = threading.Thread(target=producer.run_consumer)
-        consumer_thread.start()
-
-        # Ждем, пока consumer будет готов
-        time.sleep(2)
-
-        # Генерируем тестовое сообщение и отправляем его
-        test_message = "E2E test message"
-        producer.produce_message(test_message)
-
-        # Ждем обработки сообщения
-        time.sleep(2)
+        with open('e2e_test_output.txt', 'w') as f:
+            consumer_process = self._test_e2e(f)
 
         # Останавливаем consumer
-        producer.stop_consumer()
+        consumer_process.terminate()
 
-        # Ждем завершения consumer_thread
-        consumer_thread.join()
+    def _test_e2e(self, file):
+        # Отправляем тестовое сообщение
+        test_text = "E2E test message\n"
+        producer_process = Popen(['python', 'producer.py'], stdin=PIPE, text=True)
+        producer_process.stdin.write(test_text)
+        producer_process.stdin.close()
+        producer_process.communicate()
+
+        # Дождемся завершения процесса producer
+        producer_process.wait()
+
+        # Ждем, чтобы consumer обработал сообщение
+        time.sleep(2)
+
+        # Возвращаем consumer_process
+        return Popen(['python', 'consumer.py'], stdout=file, text=True)
 
 if __name__ == '__main__':
     unittest.main()

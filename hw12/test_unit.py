@@ -1,12 +1,10 @@
-# test_unit.py
 import unittest
-from producer import create_message
+from producer import add_numbers
 
 class TestUnit(unittest.TestCase):
-    def test_create_message(self):
-        text = "Test text"
-        message = create_message(text)
-        self.assertEqual(message.text, text)
+    def test_add_numbers(self):
+        result = add_numbers(3, 5)
+        self.assertEqual(result, 8)
 
 if __name__ == '__main__':
     unittest.main()

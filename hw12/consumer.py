@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pika
 import message_pb2  # Импортируем скомпилированный protobuf-модуль
 
@@ -5,7 +7,7 @@ def callback(ch, method, properties, body):
     # Десериализуем байты в protobuf-сообщение
     received_message = message_pb2.MyMessage()
     received_message.ParseFromString(body)
-    print(f"Получено: {received_message.text}")
+    print("Получено: {}".format(received_message.text))
 
 # Устанавливаем соединение с RabbitMQ
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
